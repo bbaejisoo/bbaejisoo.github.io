@@ -12,8 +12,8 @@
 # - name: HTML
 #   href: /html/
 
-- name: K8S
-  href: /K8S/
+- name: Kubernetes
+  href: /Kubernetes/
 
 - name: Database
   href: /database/

@@ -3,8 +3,8 @@ layout: post
 title:  "Kubernetes_GCE"
 date:   2019-03-13
 desc: "Quick test on writing code snippets in a blog post"
-keywords: "Jalpc,Jekyll,gh-pages,website,blog,easy"
-categories: [HTML]
+keywords: "Kubernetes,Kubernetes,Google,Cloud,Engine,GCE"
+categories: [Kubernetes]
 tags: [Jalpc,Jekyll]
 icon: icon-html
 ---
@@ -16,14 +16,14 @@ icon: icon-html
 <br>
 GCE는 Google Cloud Platform의 VM입니다.
 <br>
-GCP는 처음 가입 시 1년 동안 사용할 수 있는 **$300** 상당의 크레딧을 제공하기 때문에 학습이나 간단한 테스트를 할 때 유용합니다.
+GCP는 처음 가입 시 1년 동안 사용할 수 있는 ***`$300`*** 상당의 크레딧을 제공하기 때문에 학습이나 간단한 테스트를 할 때 유용합니다.
 
 ![](/static/assets/img/blog/2019-03-13-17-41-32.png){:width='600px' height='400px'}
 <br>
 <br>
-K8s노드로 사용할 서버의 최소 사양입니다.
-<br>
-![](/static/assets/img/blog/2019-03-13-18-51-51.png){:width='450px' height='200px'}
+K8S노드로 사용할 서버의 최소 사양입니다.
+
+![](/static/assets/img/blog/2019-03-14-14-16-14.png){:width='450px' height='200px'}
 <br>
 <br>
 
@@ -42,22 +42,22 @@ VM인스턴스 만들기를 눌러 VM을 생성합니다.<br>
 <br>
 
 master 설정화면
-<br>
-![](/static/assets/img/blog/2019-03-13-19-35-47.png){:width='650px' height='550px'}
+
+![](/static/assets/img/blog/2019-03-14-14-21-28.png){:width='650px' height='550px'}
 <br>
 <br>
 worker-1 설정화면
-<br>
+
 ![](/static/assets/img/blog/2019-03-13-19-42-45.png){:width='650px' height='550px'}
 <br>
 <br>
 worker-2 설정화면
-<br>
+
 ![](/static/assets/img/blog/2019-03-13-19-42-57.png){:width='650px' height='550px'}
 <br>
 <br>
 각 노드를 생성 후 조금 기다리시면 VM이 모두 준비됩니다.<br>
-Master, worker-1, worker-2 총 세개의 VM을 생성합니다.<br>
+master, worker-1, worker-2 총 세개의 VM을 생성합니다.<br>
 <br>
 ![](/static/assets/img/blog/2019-03-13-19-44-48.png){:width='700px' height='250px'}
 <br>
@@ -79,23 +79,23 @@ SSH for Google Cloud Flatform을 사용하셔서 접속하셔도 상관없습니
 
 ## **설치하기**
 <br>
-<br>
-***master, worker-1, worker-2*** 모두 동일하게 진행합니다.<br>
+
+***`master, worker-1, worker-2`*** 모두 동일하게 진행합니다.<br>
 터미널 화면을 분할해서 동시에 작업 할 수 있는 [tmux](https://github.com/tmux/tmux/wiki){:target="_blank"}, [mobaxterm](https://mobaxterm.mobatek.net/download.html){:target="_blank"} 같은 유틸을 이용하시면 더 편하게 작업 가능합니다.<br>
 <br>
-<br>
+
 모든 설치 과정은 root 권한으로 진행합니다.<br>
-```
-sudo su -
-```
+
+>sudo su -
+
 <br>
 Swap은 메모리가 부족하거나 절전 모드에서 디스크의 일부공간을 메모리처럼 사용하는 기능입니다.<br>
-Kubelet이 정상 동작할 수 있도록 해당 기능을 Swap 디바이스와 파일 모두 disable 합니다.<br>
-```   
-swapoff -a
-echo 0 > /proc/sys/vm/swappiness
-sed -e '/swap/ s/^#*/#/' -i /etc/fstab
-```
+Kubelet이 정상 동작할 수 있도록 해당 기능을 Swap 디바이스와 파일 모두 ***`disable`*** 합니다.<br>
+
+>swapoff -a
+>echo 0 > /proc/sys/vm/swappiness
+>sed -e '/swap/ s/^#*/#/' -i /etc/fstab
+
 - Swapoff -a : paging과 swap 기능을 끕니다.
   
 - /proc/sys/vm/swappiness : 커널 속성을 변경해 swap을 disable 합니다.
@@ -103,78 +103,76 @@ sed -e '/swap/ s/^#*/#/' -i /etc/fstab
 - /etc/fstab : swap을 하는 파일 시스템을 찾아 disable 합니다.
 <br>
 <br>
-<br>
 
 각 노드의 통신을 원활하게 하기 위해 방화벽 기능을 해제합니다.<br>
-```
-systemctl disable firewalld
-systemctl stop firewalld
-```
+
+>systemctl disable firewalld  
+>systemctl stop firewalld  
+
 <br>
 SELinux(Security-Enhanced Linux)는 리눅스 보안 모듈로 액세스 권한을 제어합니다.<br>
-K8s에서는 컨테이너가 호스트의 파일시스템에 접속할 수 있도록 해당 기능을 꺼야합니다.<br>
-```
-setenforce 0
-sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
-```
-<br>
-RHEL과 CentOS 7에서 *iptables* 관련 이슈가 있어서 커널 매개변수를 다음과 같이 수정하고 적용합니다.<br>
-```
-cat <<EOF >  /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
+K8S에서는 컨테이너가 호스트의 파일시스템에 접속할 수 있도록 해당 기능을 꺼야합니다.<br>
 
-sysctl --system
-```
+>setenforce 0
+>sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
 <br>
-br_netfilter 모듈이 활성화되어 있어야 합니다. *modprobe br_netfilter* 명령어로 해당 모듈을 명시적으로 추가하고,<br>
-*lsmod | grep br_netfilter* 명령어로 추가 여부를 확인 할 수 있습니다.<br>
-```
-modprobe br_netfilter
-lsmod | grep br_netfilter
-```
+RHEL과 CentOS 7에서 ***`iptables`*** 관련 이슈가 있어서 커널 매개변수를 다음과 같이 수정하고 적용합니다.<br>
+
+>cat <<EOF >  /etc/sysctl.d/k8s.conf  
+>net.bridge.bridge-nf-call-ip6tables = 1  
+>net.bridge.bridge-nf-call-iptables = 1  
+>EOF  
+>
+>sysctl --system  
+
+<br>
+br_netfilter 모듈이 활성화되어 있어야 합니다. ***`modprobe br_netfilter`*** 명령어로 해당 모듈을 명시적으로 추가하고,<br>
+***`lsmod | grep br_netfilter`*** 명령어로 추가 여부를 확인 할 수 있습니다.<br>
+
+>modprobe br_netfilter
+>lsmod | grep br_netfilter
+
 <br>
 컨테이너 실행 환경인 도커(Docker)를 설치하고 실행합니다.<br>
-K8s는 도커 이외에도 여러가지 CRI(Container Runtime Interface) 구현체를 지원하기 때문에 도커에 종속적이지 않습니다.<br>
-```
-yum install docker -y
-systemctl start docker.service
-systemctl enable docker.service
-```
+K8S는 도커 이외에도 여러가지 CRI(Container Runtime Interface) 구현체를 지원하기 때문에 도커에 종속적이지 않습니다.<br>
+
+>yum install docker -y  
+>systemctl start docker.service  
+>systemctl enable docker.service  
+
 <br>
 
 ## **Kubernetes 설치하기**
 Kubeadm은 kubelet과 kubectl을 설치하지 않기 때문에 직접 설치해야 합니다.<br>
 리파지토리를 추가하고 설치 및 실행합니다. Kubectl은 클러스터에게 명령을 내리기 위한 CLI 유틸입니다.<br>
 <br>
+
+>cat <<EOF > /etc/yum.repos.d/kubernetes.repo  
+>[kubernetes]  
+>name=Kubernetes  
+>baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64  
+>enabled=1  
+>gpgcheck=1  
+>repo_gpgcheck=1  
+>gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg  
+>exclude=kube*  
+>EOF  
+>
+>yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes  
+>systemctl enable kubelet && systemctl start kubelet  
+
 <br>
-```
-cat <<EOF > /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-exclude=kube*
-EOF
- 
-yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
-systemctl enable kubelet && systemctl start kubelet
-```
-<br>
-이제 master 노드에 컨트롤 구성 요소를 설치할 차례입니다.<br>
-해당 작업은 master에서만 실행합니다. <br>
+이제 ***`master`*** 노드에 컨트롤 구성 요소를 설치할 차례입니다.<br>
+해당 작업은 ***`master`***에서만 실행합니다. <br>
 설치 시 사용할 이미지를 먼저 다운로드 합니다.<br>
-```
-kubeadm config images pull
- 
-kubeadm init
-```
+
+>kubeadm config images pull
+>
+>kubeadm init
+
 <br>
-설치가 진행되고 마지막에 다음과 비슷한 로그가 출력됩니다.<br>
+설치가 진행되고 마지막 부분에 다음과 같은 로그가 출력됩니다.<br>
 ```
 Your Kubernetes master has initialized successfully!
  
@@ -187,97 +185,98 @@ To start using your cluster, you need to run the following as a reg
 You should now deploy a pod network to the cluster.
 Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
   https://kubernetes.io/docs/concepts/cluster-administration/addons/
- 
+
 You can now join any number of machines by running the following on each node
 as root:
- 
-  kubeadm join 10.146.0.25:6443 --token yuaea3.d7m8hkpvazrbv5yw --discovery-token-ca-cert-hash sha256:c6a7121c5d5207179f67d913fa654441137f76027ad0f4e23724f0202b280eec
+
+ kubeadm join 10.146.0.25:6443 --token yuaea3.d7m8hkpvazrbv5yw --discovery-token-ca-cert-hash sha256:c6a7121c5d5207179f67d913fa654441137f76027ad0f4e23724f0202b280eec
+
 ```
 <br>
 여기서 일반 사용자가 kubectl을 사용할 수 있도록 로그 중간에 있는 명령어를 복사해서 실행합니다.<br>
-```
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
+
+>mkdir -p $HOME/.kube  
+>sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config  
+>sudo chown $(id -u):$(id -g) $HOME/.kube/config  
+
 <br>
 맨 마지막 라인의 명령어는 worker 노드를 해당 클러스터에 추가하는 명령어입니다.<br>
-해당 명령어를 복사해서 worker-1, worker-2 노드에서 실행합니다.<br>
-```
-kubeadm join 10.146.0.25:6443 --token yuaea3.d7m8hkpvazrbv5yw --discovery-token-ca-cert-hash sha256:c6a7121c5d5207179f67d913fa654441137f76027ad0f4e23724f0202b280eec
-```
+해당 명령어를 복사해서 ***`worker-1`***, ***`worker-2`*** 노드에서 실행합니다.<br>
+
+>kubeadm join 10.146.0.25:6443 --token yuaea3.d7m8hkpvazrbv5yw --discovery-token-ca-cert-hash sha256:c6a7121c5d5207179f67d913fa654441137f76027ad0f4e23724f0202b280eec
+
 <br>
 만약 해당 커맨드를 복사해놓지 않고 지워진 경우에는 다음과 같이 토큰을 확인 할 수 있습니다.<br>
-```
-kubeadm token list
-```
+
+>kubeadm token list
+
 <br>
 해당 토큰은 24시간 동안만 사용 할 수 있습니다.<br>
 새 토큰이 필요한 경우는 다음 명령어를 실행하면 됩니다.<br>
-```
-kubeadm token create
-```
-<br>
 
+>kubeadm token create
+
+<br>
 ## **Pod network add-on 설치하기**
 Pod은 실제로 여러 노드에 걸쳐 배포되는데, Pod 끼리는 하나의 네트워크에 있는 것처럼 통신할 수 있습니다.<br>
 이를 오버레이 네트워크(Overlay Network)라고 합니다.<br>
 오버레이 네트워크를 지원하는 CNI(Container Network Interface) 플러그인을 설치해보겠습니다.<br>
-CNI 에는 여러 종류가 있는데, 이번 실습에서는  Weave를 이용합니다.<br>
+CNI 에는 여러 종류가 있는데, 이번 실습에서는  ***`Weave`***를 이용합니다.<br>
 
 Master 노드에서 다음과 같이 설치합니다.<br>
-```
-kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-```
+
+>kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"  
+
 <br>
 CNI를 설치하면 CoreDNS Pod이 정상적으로 동작하게 됩니다.<br>
 
 다음 명령어로 각 노드와 상태를 확인 할 수 있습니다. <br>
-처음엔 상태가 NotReady라고 나 올 수 있지만 잠시 기다리면 모두 Ready 상태가 됩니다.<br>
+처음엔 상태가 ***`NotReady`***라고 나 올 수 있지만 잠시 기다리면 모두 ***`Ready`*** 상태가 됩니다.<br>
 <br>
+
+>kubectl get no
+
 ```
-kubectl get no
- 
-NAME       STATUS   ROLES    AGE     VERSION
-master     Ready    master   6m44s   v1.13.3
-worker-1   Ready    <none>   5m20s   v1.13.3
-worker-2   Ready    <none>   5m19s   v1.13.3
+NAME       STATUS   ROLES    AGE     VERSION  
+master     Ready    master   6m44s   v1.13.3  
+worker-1   Ready    <none>   5m20s   v1.13.3  
+worker-2   Ready    <none>   5m19s   v1.13.3  
 ```
 <br>
 ## **설치 확인하기**
+<br>
+<br>
+다음 명령어로 K8S의 구성 요소가 모두 동작하는 것을 확인 할 수 있습니다.<br>
 
+>kubectl get componentstatuses
 
-<br>
-<br>
-다음 명령어로 K8s의 구성 요소가 모두 동작하는 것을 확인 할 수 있습니다.<br>
 ```
-kubectl get componentstatuses
- 
-NAME                 STATUS    MESSAGE              ERROR
-scheduler            Healthy   ok                   
-controller-manager   Healthy   ok                   
-etcd-0               Healthy   {"health": "true"}
+NAME                 STATUS    MESSAGE              ERROR  
+scheduler            Healthy   ok                     
+controller-manager   Healthy   ok                     
+etcd-0               Healthy   {"health": "true"}  
 ```
 <br>
-K8s의 구성요고가 pod으로 어떤 노드에 떠있는지 확인 할 수 있습니다.<br>
+K8S의 구성요고가 pod으로 어떤 노드에 떠있는지 확인 할 수 있습니다.<br>
 etcd, API server, Scheduler, Controller Manager, DNS Server 는 master에서 실행됩니다.<br>
 Kube proxy 와 Weave는 각 worker 에서 실행됩니다.<br>
+
+>kubectl get po -o custom-columns=POD:metadata.name,NODE:spec.nodeName --sort-by spec.nodeName -n kube-system
+
 ```
-kubectl get po -o custom-columns=POD:metadata.name,NODE:spec.nodeName --sort-by spec.nodeName -n kube-system
- 
-POD                              NODE
-kube-proxy-pz25z                 master
-etcd-master                      master
-kube-apiserver-master            master
-kube-controller-manager-master   master
-kube-scheduler-master            master
-weave-net-8npbk                  master
-coredns-86c58d9df4-r5qq5         worker-1
-weave-net-dbk8x                  worker-1
-kube-proxy-8mrkx                 worker-1
-coredns-86c58d9df4-tsdf4         worker-1
-weave-net-bds9l                  worker-2
-kube-proxy-7pn22                 worker-2
+POD                              NODE  
+kube-proxy-pz25z                 master  
+etcd-master                      master  
+kube-apiserver-master            master  
+kube-controller-manager-master   master  
+kube-scheduler-master            master  
+weave-net-8npbk                  master  
+coredns-86c58d9df4-r5qq5         worker-1  
+weave-net-dbk8x                  worker-1  
+kube-proxy-8mrkx                 worker-1  
+coredns-86c58d9df4-tsdf4         worker-1  
+weave-net-bds9l                  worker-2  
+kube-proxy-7pn22                 worker-2  
 ```
 <br>
 이제 설치가 잘 되었는지 Pod를 배포하고 동작을 확인해보겠습니다.<br>
@@ -288,41 +287,43 @@ kube-proxy-7pn22                 worker-2
 <br>
 ## **간단한 Pod 배포하기**
 먼저 간단한 Pod을 배포해서 동작을 확인해봅시다.<br>
-다음과 같은 pod-test.yml 파일을 생성합니다.<br>
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: myapp-pod
-  labels:
-    app: myapp
-spec:
-  containers:
-  - name: myapp-container
-    image: busybox
-    command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
-```
+다음과 같은 **`pod-test.yml`** 파일을 생성합니다.<br>
+
+>apiVersion: v1  
+>kind: Pod  
+>metadata:  
+>  name: myapp-pod  
+>  labels:  
+>    app: myapp  
+>spec:  
+>  containers:  
+>  - name: myapp-container  
+>    image: busybox  
+>    command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']  
+
 <br>
 해당 Pod이 실행되면 busybox라는 경량 리눅스 이미지에 'Hello Kubernetes!' 라는 로그가 잠시 동안 출력되고 Pod은 종료될겁니다.<br>
 
 이제 해당 Pod를 배포합니다.<br>
-```
-kubectl apply -f pod-test.yaml
-```
+
+>kubectl apply -f pod-test.yaml
+
 <br>
 해당 Pod 이 정상적으로 실행된 것을 볼 수 있습니다.<br>
+
+>kubectl get po
+
 ```
-kubectl get po
- 
-NAME        READY   STATUS    RESTARTS   AGE
-myapp-pod   1/1     Running   0          6s
+NAME        READY   STATUS    RESTARTS   AGE  
+myapp-pod   1/1     Running   0          6s  
 ```
 <br>
 로그도 확인해봅니다.<br>
-```
-kubectl logs myapp-pod
- 
-Hello Kubernetes!
+
+>kubectl logs myapp-pod
+
+``` 
+Hello Kubernetes!  
 ```
 <br>
 <br>
@@ -336,26 +337,28 @@ Hello Kubernetes!
 
 다음 명령을 이용해 Namespace 를 만들고 각종 구성요소를 배포합니다.<br>
 complete-demo.yml 파일 안에는 애플리케이션에 필요한 Deployment, Service 등이 정의되어 있습니다.<br>
-```
-kubectl create ns sock-shop
- 
-kubectl apply -n sock-shop -f "https://github.com/microservices-demo/microservices-demo/blob/master/deploy/kubernetes/complete-demo.yaml?raw=true"
-```
+
+>kubectl create ns sock-shop  
+
+>kubectl apply -n sock-shop -f "https://github.com/microservices-demo/microservices-demo/blob/master/deploy/kubernetes/complete-demo.yaml?raw=true"  
+
 <br>
 다음 명령어로 새롭게 배포된 구성 요소를 모두 확인 할 수 있습니다.<br>
-```
-kubectl get all -n sock-shop
-```
+
+>kubectl get all -n sock-shop
+
 <br>
 
 모든 Pod이 Running 상태가 되면 front-end 서비스의 NodePort를 확인합니다.<br>
 NodePort는 해당 서버(노드)의 포트와 Pod을 연결해서 사용하는 방식입니다.<br>
+
+>kubectl get svc front-end -n sock-shop -o wide
+
 ```
-kubectl get svc front-end -n sock-shop -o wide
- 
 NAME        TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE     SELECTOR
 front-end   NodePort   10.105.37.122   <none>        80:30001/TCP   2m48s   name=front-end
 ```
+
 <br>
 
 따라서 노드의 외부IP와 포트 번호를 이용해서 접속 할 수 있습니다.<br>
@@ -373,7 +376,7 @@ GCP 서비스 중 VPC 네트워크 -> 방화벽 규칙 메뉴로 들어가 방�
 대상은 편의상 '네트워크의 모든 인스턴스'를 선택하고, IP 범위는 0.0.0.0/0으로 설정합니다.<br>
 프로토콜 및 포트는 tcp 를 선택하고 위에서 확인한 NodePort를 설정합니다.<br>
 <br>
-그러면 http://34.85.95.211:30001 로 접속 할 수 있게 됩니다.
+그러면 ***`http://34.85.95.211:30001`*** 로 접속 할 수 있게 됩니다.
 <br>
 GCE를 이용해서 간단하게 서버 자원을 확보하고 Kubeadm을 이용하여 클러스터를 구성해봤습니다.<br>
 물론 직접 컨트롤하지 않고 사용하는 것이 위주라면 <br>
