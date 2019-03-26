@@ -7,10 +7,17 @@
   @include box-sizing;
 }
 .center {
-  margin-left: auto; 
-  margin-right: auto; 
+  //margin-left: auto; 
+  //margin-right: auto; 
+  margin-left: 40px;
   display: block;
   border: solid;
+}
+.wh40 {
+  max-width: 50%;
+}
+.wh45 {
+  max-width: 50%;
 }
 .wh50 {
   max-width: 50%;
@@ -59,8 +66,8 @@
 img {
   display: block;
   max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
+  //margin-left: auto;
+  //margin-right: auto;
 }
 
 // Tables
