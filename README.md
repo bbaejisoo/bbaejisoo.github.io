@@ -2,7 +2,7 @@
 ## Github Blog
 - [bbaejisoo.github.io](https://bbaejisoo.github.io)
 - 이 블로그는 [변성윤](https://zzsza.github.io)님 블로그 테마를 기반으로 제작되었습니다
-- 본 테마(혹은 변성윤님 테마)를 사용하고 싶으신 경우, issue 또는 메일([js_bbae@gmail.com](js_bbae@gmail.com))로 사용 요청을 해주세요.
+- 본 테마(혹은 변성윤님 테마)를 사용하고 싶으신 경우, issue 또는 메일([jisoobbae@gmail.com](jisoobbae@gmail.com))로 사용 요청을 해주세요.
 
 ### Structure
 - 다른 분들이 이 테마를 Fork할 경우, 사용할 수 있도록 블로그 구조에 대해 설명합니다
